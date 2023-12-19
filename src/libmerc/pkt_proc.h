@@ -36,7 +36,8 @@ enum linktype : uint16_t {
     LINKTYPE_NULL =       0,  // BSD loopback encapsulation
     LINKTYPE_ETHERNET =   1,  // Ethernet
     LINKTYPE_PPP      =   9,  // PPP
-    LINKTYPE_RAW      = 101   // Raw IP; begins with IPv4 or IPv6 header
+    LINKTYPE_RAW      = 101,  // Raw IP; begins with IPv4 or IPv6 header
+    LINKTYPE_SLL      = 113   // Linux "cooked" capture encapsulation
 };
 
 
@@ -212,6 +213,11 @@ struct stateful_pkt_proc {
                             struct tcp_reassembler *reassembler);
 
     bool analyze_raw_packet(const uint8_t *ppp_packet,
+                            size_t length,
+                            struct timespec *ts,
+                            struct tcp_reassembler *reassembler);
+
+    bool analyze_sll_packet(const uint8_t *ppp_packet,
                             size_t length,
                             struct timespec *ts,
                             struct tcp_reassembler *reassembler);

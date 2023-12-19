@@ -51,6 +51,7 @@
 #include "netbios.h"
 #include "openvpn.h"
 #include "mysql.hpp"
+#include "sll.h"
 
 // double malware_prob_threshold = -1.0; // TODO: document hidden option
 
@@ -764,6 +765,10 @@ size_t stateful_pkt_proc::write_json(void *buffer,
             return 0;
         break;
     case LINKTYPE_RAW:
+    case LINKTYPE_SLL:
+        if (!sll::is_ip(pkt)) {
+            return 0;
+        }
         break; 
     default:
         break;
@@ -924,6 +929,17 @@ bool stateful_pkt_proc::analyze_raw_packet(const uint8_t *packet,
     return analyze_ip_packet(pkt.data, pkt.length(), ts, reassembler);
 }
 
+bool stateful_pkt_proc::analyze_sll_packet(const uint8_t *packet,
+                                           size_t length,
+                                           struct timespec *ts,
+                                           struct tcp_reassembler *reassembler) {
+    struct datum pkt{packet, packet+length};
+    if (!sll::is_ip(pkt)) {
+        return false;   // not an IP packet
+    }
+    return analyze_ip_packet(pkt.data, pkt.length(), ts, reassembler);
+}
+
 bool stateful_pkt_proc::analyze_packet(const uint8_t *eth_packet,
                             size_t length,
                             struct timespec *ts,
@@ -939,6 +955,9 @@ bool stateful_pkt_proc::analyze_packet(const uint8_t *eth_packet,
         break;
     case LINKTYPE_RAW:
         return analyze_raw_packet(eth_packet, length, ts, reassembler);
+        break;
+    case LINKTYPE_SLL:
+        return analyze_sll_packet(eth_packet, length, ts, reassembler);
         break;
     default:
         break;
